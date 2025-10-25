@@ -1,51 +1,66 @@
 # InstantTransmission
 
-Zero-configuration local file sharing utility for Windows.
+**Zero-configuration peer-to-peer file sharing for Windows 10/11**
 
-## ⚠️ Project Status
+Share files across your local network with automatic peer discovery - no setup required.
 
-**Last Working Build:** June 7, 2025 (file date: `instant_transmission.exe`)
+## 🧪 Beta Release
 
-This repository is primarily for **source code backup**. The source contains both **tested working features** and **untested WIP code** that was added after the last successful build. Features may not work as expected if rebuilt from current source.
+**Status:** Beta 1 - Tested on Windows 11, needs broader testing
 
-### ✅ Working Features (Confirmed in June 7 Build)
+This worked reliably on the developer's Windows 11 machines but **needs community testing** on different Windows configurations. If you encounter issues, please report them!
 
-- **WebDAV File Sharing** - Share files via local WebDAV server (port 8080)
-- **mDNS Peer Discovery** - Automatic discovery of other InstantTransmission instances on LAN
-- **Dark Mode File Explorer** - Custom Tkinter GUI for browsing/downloading files from peers
-- **System Tray Integration** - Background operation with tray icon and context menu
-- **Folder Downloads** - Download entire folders with directory structure preservation
-- **Download Progress** - Real-time speed (MB/s) and ETA display
-- **Automatic Firewall Configuration** - Sets up Windows Firewall rules (requires admin)
-- **High-Performance Server** - Waitress WSGI server for fast transfers
+## ✨ What Works
 
-### ⚠️ WIP/Untested Features (Source Code Only)
+### Core Features
+- **🔍 Automatic Peer Discovery** - Find other users on your network instantly via mDNS
+- **📁 File Sharing** - Share your Public folder via WebDAV (read-only for security)
+- **📂 Folder Downloads** - Download entire folders while preserving directory structure
+- **⚡ Fast Transfers** - High-performance Waitress server (10+ MB/s on gigabit LAN)
+- **📊 Progress Tracking** - Real-time download speed and ETA
+- **🎨 Dark Mode UI** - Custom file browser with modern dark theme
+- **🔔 System Tray** - Runs in background, access via tray icon
+- **🛡️ Auto Firewall Setup** - Configures Windows Firewall automatically (requires admin on first run)
 
-These features exist in the source code but were **added after the last build** and have **NOT been tested**:
+### What's Tested
+- ✅ Windows 11 (developer machines)
+- ✅ Local network file sharing (same subnet)
+- ✅ Multiple peers discovering each other
+- ✅ Large file transfers (multi-GB tested)
+- ✅ Folder structure preservation
 
-- **Password Authentication** (`password_manager.py`, `auth_controller.py`) - Added but never integrated
-- **Remote Desktop Control** (`remote_desktop.py`) - Screen streaming + remote input, created July 2, 2025
-- **Control Request Server** - HTTP endpoint for remote desktop requests
+### Design Decisions
+- **Windows only** - No Linux/Mac support yet
+- **Read-only sharing** - Security by design (peers can't modify your files)
+- **No authentication** - Simplicity over complexity (use on trusted networks)
+- **Local network only** - Intentional security feature (never exposed to internet)
 
-**Building from current source will likely fail** due to incomplete integration of these WIP features.
+## 🚀 Quick Start
 
-## Installation & Usage
+### Download & Run
 
-### For End Users (Recommended)
+1. Download `InstantTransmission-Portable.zip` from [Releases](https://github.com/Sky-Wright/InstantTransmission/releases)
+2. Extract anywhere
+3. Run `instant_transmission.exe`
+4. Grant admin permission when prompted (needed for firewall setup)
+5. Look for the tray icon in your system tray
 
-Use the pre-built executable from June 7, 2025:
+### Using InstantTransmission
 
-1. Navigate to `dist/instant_transmission/`
-2. Run `instant_transmission.exe` (requires admin privileges for firewall setup)
-3. Application will:
-   - Create system tray icon
-   - Serve your Public folder via WebDAV
-   - Discover other peers on the network
-4. Right-click tray icon → Select a peer → Browse and download files
+**Sharing files:**
+- Put files you want to share in `C:\Users\YourName\Public`
+- They're automatically shared to discovered peers
 
-### For Developers
+**Browsing peers:**
+- Right-click the tray icon
+- Select a peer from the "Discovered Peers" menu
+- Browse and download files via the dark mode file browser
 
-**Note:** Current source code has untested WIP features that may cause errors.
+**That's it!** No configuration needed.
+
+## 🛠️ For Developers
+
+**Note:** Source code includes unfinished features (password auth, remote desktop). These are not in the Beta 1 build and may cause issues if you try to rebuild.
 
 ```bash
 # Setup
@@ -53,83 +68,43 @@ python -m venv .venv
 .venv\Scripts\activate
 pip install -r requirements.txt
 
-# Run (WIP features may not work)
+# Run
 python instant_transmission.py
 ```
 
-## Requirements
+## 📋 System Requirements
 
 - **Windows 10/11 (64-bit)**
-- **Administrator privileges** (for firewall configuration)
-- **Python 3.7+** (for development)
+- **Administrator privileges** (one-time, for firewall setup)
+- **Local network connection**
 
-### Dependencies
+## 🏗️ Architecture
 
-```
-wsgidav>=4.0.0
-waitress>=2.1.2
-zeroconf>=0.47.0
-pystray>=0.19.0
-requests>=2.25.0
-netifaces>=0.11.0
-Pillow>=9.0.0
+Built with Python using:
+- **Waitress** - High-performance WSGI server
+- **WsgiDAV** - WebDAV protocol implementation
+- **Zeroconf** - mDNS service discovery
+- **Tkinter** - Cross-platform GUI framework
+- **pystray** - System tray integration
 
-# WIP features (not in working build):
-mss>=6.0.0
-pynput>=1.7.0
-```
+## 🔒 Security
 
-## Architecture
+- **Local network only** - Not exposed to the internet
+- **Read-only sharing** - Peers can only download, not upload/modify
+- **Firewall protected** - Automatic Windows Firewall rule setup
+- **No cloud services** - Everything stays on your network
 
-### Working Components (June 7 Build)
+## 🤝 Contributing
 
-- `instant_transmission.py` - Main entry point
-- `src/webdav_server.py` - Waitress-based WebDAV server
-- `src/mdns_discovery.py` - mDNS service registration/browsing
-- `src/system_tray.py` - System tray icon and menu
-- `src/file_explorer.py` - Dark mode file browser GUI
-- `src/admin_utils.py` - Admin privilege handling and firewall setup
+This is a beta release! If you:
+- Find bugs → Open an issue
+- Have Windows 10 → Test it and report back
+- Want features → Suggest them in discussions
 
-### WIP Components (Not in Build)
+## 📜 License
 
-- `src/remote_desktop.py` - Screen streaming server/client (untested)
-- `src/password_manager.py` - Password storage (untested)
-- `src/auth_controller.py` - Authentication controller (untested)
+GPL-3.0 - Open source begits open source
 
-## Building
+## 🙏 Acknowledgments
 
-**Warning:** Current source may not build correctly due to WIP features not being fully integrated.
-
-```bash
-pyinstaller instant_transmission.spec
-```
-
-Note: You may need to remove/comment out WIP imports for a successful build.
-
-## Known Issues
-
-- Current source imports WIP modules that may cause runtime errors
-- Remote desktop feature was never completed or tested
-- Password authentication was scaffolded but not integrated with WebDAV server
-
-## Performance
-
-Real-world testing (June 7 build):
-- **Transfer speeds:** >10 MB/s on gigabit LAN
-- **Peer discovery:** <2 seconds on same subnet
-- **Folder downloads:** Preserves full directory structure
-
-## Security Notes
-
-- File sharing is **local network only**
-- WebDAV server is **read-only** by default
-- Requires **explicit firewall rule** (auto-configured on first run)
-- WIP password features are **not active** in working build
-
-## License
-
-To be determined.
-
-## Backup Repository
-
-This repository exists primarily for **source code backup**. The last confirmed working build is from June 7, 2025. Use WIP features at your own risk.
+Built for local network file sharing without the hassle of mapped drives, shared folders, or cloud services.
