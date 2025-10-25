@@ -4,9 +4,9 @@ Zero-configuration local file sharing utility for Windows.
 
 ## ⚠️ Project Status
 
-**Last Working Build:** June 7, 2025 (`dist/instant_transmission/instant_transmission.exe`)
+**Last Working Build:** June 7, 2025 (file date: `instant_transmission.exe`)
 
-This repository contains both **tested working features** and **untested WIP code**. The source code has evolved beyond the last built executable, so features may not work as expected if rebuilt.
+This repository is primarily for **source code backup**. The source contains both **tested working features** and **untested WIP code** that was added after the last successful build. Features may not work as expected if rebuilt from current source.
 
 ### ✅ Working Features (Confirmed in June 7 Build)
 
@@ -45,7 +45,7 @@ Use the pre-built executable from June 7, 2025:
 
 ### For Developers
 
-**Note:** Current source code has untested WIP features. For a working build, checkout commit from June 7, 2025.
+**Note:** Current source code has untested WIP features that may cause errors.
 
 ```bash
 # Setup
@@ -53,7 +53,7 @@ python -m venv .venv
 .venv\Scripts\activate
 pip install -r requirements.txt
 
-# Run (with WIP features that may not work)
+# Run (WIP features may not work)
 python instant_transmission.py
 ```
 
@@ -98,11 +98,13 @@ pynput>=1.7.0
 
 ## Building
 
-**Warning:** Current source may not build correctly due to WIP features.
+**Warning:** Current source may not build correctly due to WIP features not being fully integrated.
 
-To build the last working version:
-1. Checkout source state from June 7, 2025
-2. Run: `pyinstaller instant_transmission.spec`
+```bash
+pyinstaller instant_transmission.spec
+```
+
+Note: You may need to remove/comment out WIP imports for a successful build.
 
 ## Known Issues
 
