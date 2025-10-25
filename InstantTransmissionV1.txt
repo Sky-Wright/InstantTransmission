@@ -1,0 +1,107 @@
+# InstantTransmissionV1.txt - Functionality Overview
+
+## 1. Introduction
+
+This document outlines the functionality of InstantTransmission Version 1.0 as of June 6, 2025.
+InstantTransmission is a desktop application designed for simple and secure peer-to-peer file sharing within a local network. It allows users to discover other users running the application on the same network and browse and download files shared by them.
+
+This document reflects the actual implemented features, drawing comparisons to the initial concepts laid out in `DevDoc.txt` and `InstantTransmissionOutline.txt`.
+
+## 2. Core Functionality
+
+### 2.1. Peer Discovery (mDNS)
+   - **Mechanism**: Uses mDNS (Multicast DNS) / Zeroconf (via `zeroconf` library) to automatically discover other InstantTransmission instances on the local network.
+   - **Service Details**: Each instance registers a `_webdav._tcp.local.` service, advertising its IP address, port, and a unique instance name.
+   - **Dynamic Updates**: The application dynamically updates the list of available peers as they appear or disappear from the network.
+   - **Windows Notifications**: Users receive a Windows system notification when a new peer is discovered. This feature was part of the enhanced user experience goals.
+   - **Manual Refresh**: A "Refresh Peers" option is available in the system tray menu to manually trigger a re-discovery process. This was an added feature for better control and responsiveness.
+
+### 2.2. File Sharing (WebDAV Server)
+   - **Mechanism**: Each InstantTransmission instance runs an embedded WebDAV server (via `wsgidav`) to share files.
+   - **Shared Content**: By default, the application shares a pre-configured directory (e.g., a "Shared" folder or the application's root directory for simplicity in V1). The exact shared directory is configured within `webdav_server.py`.
+   - **Read-Only Access**: The WebDAV server is configured for **read-only access**. This is a key security measure, ensuring that remote users can only browse and download files, not modify or delete them on the host. This aligns with the security considerations in `DevDoc.txt`.
+   - **Local Network Only**: The WebDAV server is intended for local network access, typically bound to the host's local IP address.
+
+### 2.3. File Browsing and Downloading (File Explorer GUI)
+   - **Interface**: A Tkinter-based graphical user interface (`src/file_explorer.py`) allows users to browse the files of discovered peers.
+   - **Peer Selection**: Users can select a peer from a list (populated by mDNS discovery) to view their shared files.
+   - **File Tree**: Shared files and folders of the selected peer are displayed in a tree view.
+   - **Downloading Files**:
+      - Users can select a file and click a "Download" button.
+      - A "Save As" dialog (`filedialog.asksaveasfilename`) appears, allowing the user to choose the download location and filename. This is an improvement over a fixed download path for better usability.
+      - The application displays download progress, including a progress bar, download speed (KB/s or MB/s), and estimated time remaining (ETA). This was a planned feature from `InstantTransmissionOutline.txt`.
+   - **Opening Downloads Folder**: An "Open Downloads" button is provided, which opens the directory where the last file was saved.
+   - **Modern Theming**: The GUI uses the `sv_ttk` library to apply a modern dark theme, enhancing the visual appeal. This was an iterative improvement.
+   - **UI Persistence**:
+      - The application saves and restores the main window's size and position.
+      - The widths of the columns in the file tree view are also saved and restored.
+      - Configuration is stored in `~/.InstantTransmission/file_explorer_config.json`. This feature enhances user experience by remembering preferences.
+
+## 3. User Interface Components
+
+### 3.1. Main Application Window
+   - This is the `FileExplorerApp` GUI described in section 2.3.
+   - It's the primary interface for interacting with peers and their files.
+
+### 3.2. System Tray Icon
+   - **Presence**: The application features a system tray icon (`icon.ico`) for persistent background operation and quick access.
+   - **Menu Options**:
+      - **Discovered Peers**: The tray menu dynamically lists currently discovered peers. Selecting a peer opens/focuses the main File Explorer window and loads their files.
+      - **Refresh Peers**: Triggers a manual mDNS re-discovery scan.
+      - **Open**: Shows the main application window if hidden.
+      - **Quit**: Shuts down the application, including the WebDAV server and mDNS services.
+   - **Status Indication**: The tray icon provides a visual cue that the application is running.
+
+## 4. Configuration and Setup
+
+### 4.1. UI Configuration
+   - Stored in `~/.InstantTransmission/file_explorer_config.json`.
+   - Automatically managed by `src/file_explorer.py`.
+
+### 4.2. Firewall Configuration
+   - **Automatic Rule**: The application attempts to automatically add a Windows Firewall rule for itself upon first run (or if the rule doesn't exist) to allow incoming connections for peer discovery and file sharing. This requires administrator privileges.
+   - **Admin Privileges**: `src/admin_utils.py` handles checking for admin rights and re-launching with elevation if needed for firewall setup.
+   - **Local Network Focus**: The firewall rule is typically configured to allow access only from the local private network.
+
+## 5. Comparison with Original Design Documents (`DevDoc.txt`, `InstantTransmissionOutline.txt`)
+
+### 5.1. Implemented Features (Aligned with Original Plan):
+   - **Core Discovery**: mDNS for peer discovery was a foundational concept and is fully implemented.
+   - **Core File Sharing**: WebDAV for serving files is implemented as planned.
+   - **GUI for Browsing/Downloading**: A Tkinter GUI for these functions is present.
+   - **Download Progress**: Progress bar, speed, and ETA for downloads are implemented.
+   - **System Tray Integration**: Basic system tray functionality (peer list, quit) is implemented.
+   - **Read-Only Server**: Security consideration for a read-only server was implemented.
+   - **Packaging**: PyInstaller is used for creating the executable.
+
+### 5.2. Implemented Features (Enhancements/Evolutions beyond initial detailed plan):
+   - **Windows Notifications for Peer Discovery**: Added for better UX.
+   - **Manual Peer Refresh**: Added for user control.
+   - **"Save As" Dialog for Downloads**: Improved usability over a fixed download path.
+   - **"Open Downloads" Button**: Convenience feature.
+   - **`sv_ttk` Theming**: Modernized the UI's appearance.
+   - **UI State Persistence (Window Size, Column Widths)**: Enhanced UX.
+   - **Robust Admin Handling for Firewall**: Clearer process for firewall setup.
+   - **One-Folder Build with No UPX**: Specific build changes to address compatibility/detection issues.
+
+### 5.3. Deviations or Features Not Yet Implemented (from original broader ideas, if any):
+   - `DevDoc.txt` and `InstantTransmissionOutline.txt` were fairly well-aligned with the V1 scope. Most core features outlined have been implemented.
+   - Any advanced features mentioned as "future considerations" in those documents (e.g., chat, multi-directory sharing, write access with authentication) are naturally out of scope for this V1 documentation.
+   - The initial shared directory is hardcoded/fixed in `webdav_server.py` rather than user-configurable through the UI in V1. This was implied as a starting point in `DevDoc.txt`.
+
+## 6. Build and Distribution
+   - **Build Tool**: PyInstaller.
+   - **Build Type**: One-folder (`--onedir`) distribution. This was chosen over `--onefile` to mitigate issues with antivirus software.
+   - **UPX Compression**: Disabled (`--noupx`) for similar reasons.
+   - **Included Assets**: The build includes the `src` directory and `icon.ico`.
+   - **Executable**: `instant_transmission.exe` located in the `dist/instant_transmission` folder.
+
+## 7. Key Modules and Their Roles
+   - `instant_transmission.py`: Main application script, orchestrates all components.
+   - `src/file_explorer.py`: Handles the GUI, file browsing, downloads, theming, and UI config.
+   - `src/mdns_discovery.py`: Manages peer discovery via mDNS, service registration/browsing, and notifications.
+   - `src/system_tray.py`: Implements the system tray icon, menu, and its actions.
+   - `src/webdav_server.py`: Runs the read-only WebDAV server for sharing files.
+   - `src/admin_utils.py`: Utilities for admin privilege checks and firewall management.
+
+This document provides a snapshot of InstantTransmission V1. It reflects a functional application achieving the primary goals of local network file discovery and sharing with an emphasis on usability and necessary security for its intended environment.

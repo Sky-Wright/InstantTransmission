@@ -1,0 +1,305 @@
+InstantTransmission: Comprehensive Development Guide
+
+This document outlines a structured approach to developing the "InstantTransmission" application, a self-contained, zero-configuration local file sharing utility for Windows. This guide assumes a clean slate, leveraging Python as the primary development language, and focuses on implementing the features specified in the consolidated Goal.txt.
+I. Project Setup & Environment
+
+Before writing any code, set up a clean development environment.
+
+    Create Project Directory: Create a new, empty directory for your project (e.g., InstantTransmission_Project).
+
+    Virtual Environment:
+
+        Open your terminal/command prompt inside the InstantTransmission_Project directory.
+
+        Create a virtual environment: python -m venv .venv
+
+        Activate the virtual environment:
+
+            Windows (PowerShell): .\.venv\Scripts\Activate.ps1
+
+            Windows (Command Prompt): .\.venv\Scripts\activate.bat
+
+            Linux/macOS: source ./.venv/bin/activate
+
+    Create requirements.txt: Create a file named requirements.txt in your project root with the following initial dependencies:
+
+    wsgidav>=4.0.0
+    zeroconf>=0.47.0
+    pystray>=0.19.0
+    requests>=2.25.0
+    netifaces>=0.11.0
+    pyinstaller>=5.0
+    Pillow>=9.0.0
+
+        Note on Pillow: While not strictly essential for pure file browsing, it's a common image library. Including it initially accounts for potential future stretch goals like thumbnail previews, aligning with the Goal.txt's flexibility.
+
+        Note on wsgidav: This is a robust Python WebDAV server that is generally suitable for the backend.
+
+    Install Dependencies: With the virtual environment active, install the listed packages:
+    pip install -r requirements.txt
+
+II. Core Architectural Components & Implementation Steps
+
+The application will feature a hybrid architecture: a Python-based WebDAV server for local file serving, mDNS for discovery, and a custom Tkinter (or PyQt) GUI launched from a system tray icon for remote file browsing.
+A. The WebDAV Backend Server
+
+This component will serve the user's Public folder locally, acting as the foundation for file access by other InstantTransmission peers.
+
+    Purpose: Expose C:\Users\<username>\Public via WebDAV over HTTP.
+
+    Library: wsgidav is recommended. It provides a full-featured WebDAV implementation.
+
+    Basic Setup:
+
+        Identify the user's Public folder programmatically (os.path.expanduser("~/Public")).
+
+        Configure wsgidav to serve this folder.
+
+        Choose a custom port (e.g., 8080) for the WebDAV server.
+
+    Threading: The WebDAV server must run in a separate thread or process to prevent blocking the main GUI thread. Use Python's threading module.
+
+    Firewall Configuration: This is critical for visibility.
+
+        Identify the current user's Public folder path.
+
+        The application will need to check for and, if necessary, add an inbound firewall rule for the chosen WebDAV port (e.g., TCP 8080) for the application's executable. This requires Administrator privileges.
+
+        Consider using subprocess to execute netsh advfirewall firewall add rule commands (or PowerShell equivalents) for rule management.
+
+B. mDNS Peer Discovery
+
+This enables automatic, zero-configuration detection of other InstantTransmission instances on the local network.
+
+    Purpose: Register and discover _webdav._tcp.local. services.
+
+    Library: zeroconf is the standard Python library for mDNS.
+
+    Service Registration:
+
+        On startup, each instance will register its own WebDAV service with a unique name (e.g., InstantTransmission-[ComputerName]).
+
+        Include the local IP address(es) and the WebDAV server port.
+
+    Service Browsing:
+
+        Continuously browse for other _webdav._tcp.local. services.
+
+        Maintain a dynamic list of discovered peers (IP address, name, port).
+
+        Implement callbacks for when services are added, removed, or updated.
+
+C. System Tray Interface
+
+Provides minimal, non-intrusive access to the application's core functions.
+
+    Purpose: Offer status indication and quick access to discovered peers and local folder.
+
+    Library: pystray is ideal for cross-platform system tray icons.
+
+    Icon & Menu:
+
+        Create a simple application icon (e.g., a small blue square).
+
+        Define a context menu for the icon:
+
+            "Open My Public Folder" (opens local Public folder in Windows Explorer).
+
+            A dynamically updated submenu listing discovered peers. Clicking a peer name will launch the custom file explorer for that peer.
+
+            "Exit" (gracefully shuts down server, discovery, and application).
+
+    Dynamic Menu Updates: As peers are discovered/lost via mDNS, update the system tray menu in real-time.
+
+D. Custom File Explorer UI (Tkinter)
+
+This is the central user interaction point, replacing native Windows Explorer integration. Tkinter is recommended for initial implementation due to its built-in nature and ease of setup.
+
+    Purpose: Allow users to browse, download, copy, and paste files from remote peers.
+
+    Framework: Tkinter (Python's built-in GUI library).
+
+    Core Design:
+
+        Main Window: A resizeable window for the file explorer.
+
+        Toolbar: Buttons for "Back", "Home", "Refresh", "Download", "Copy", "Paste" (upload is a stretch goal).
+
+        Path Display: A text field or label showing the current remote path being viewed.
+
+        File List View: Use a Treeview widget to display files and folders.
+
+            Columns: Name, Size, Modified Date, Type.
+
+            Populate this view by making HTTP GET requests to the remote WebDAV server for directory listings (parsing the XML/JSON responses from the WebDAV server).
+
+        Status Bar: Display messages like "Loading...", "Downloading...", "Error:".
+
+    Navigation:
+
+        Implement logic for navigating into subfolders (double-click).
+
+        "Back" button to go up a directory level.
+
+        "Home" button to return to the root of the remote Public folder.
+
+    File Operations (Client-side):
+
+        Download: When a file is selected and "Download" is clicked:
+
+            Use the requests library to perform an HTTP GET request to the remote file's URL.
+
+            Save the streamed content to a local directory (e.g., user's Downloads folder or a configurable destination).
+
+            Implement basic progress indication for large files (even if simple, e.g., a text update in the status bar).
+
+        Copy/Paste:
+
+            "Copy" action stores the remote file's URL(s) in a global variable (or clipboard if feasible within Python GUI limitations).
+
+            "Paste" action, when viewing a remote folder, would trigger an HTTP PUT request to upload the file to that location. If pasting to local folder, it's a local move. (Note: Inter-peer copy/paste implies one peer downloads, then uploads. This is more complex than simple download). Focus on downloading from remote to local, and for "paste" consider uploading local to remote as a primary step.
+
+        Rename/Delete/Create Folder: These will involve making appropriate WebDAV method calls (MOVE, DELETE, MKCOL) using the requests library to the remote server.
+
+E. Network Client for File Operations
+
+This is the client-side logic within the custom GUI that communicates with other InstantTransmission peers' WebDAV servers.
+
+    Purpose: Send HTTP requests (GET, PUT, DELETE, MKCOL, PROPFIND, MOVE, COPY) to remote WebDAV servers.
+
+    Library: requests is the primary library for making HTTP calls.
+
+    Request Construction: Construct URLs for files and folders on remote peers using their discovered IP address and port.
+
+    Asynchronous I/O: For performance, especially with file transfers, consider using threading or concurrent.futures to execute network requests in the background, preventing the UI from freezing.
+
+    Error Handling: Implement robust try-except blocks around network calls to handle connection errors, timeouts, and HTTP status codes (e.g., 404 Not Found, 401 Unauthorized). Display user-friendly error messages.
+
+III. Integration & Orchestration
+
+This section ties all the components together in the main application script (instant_transmission.py).
+
+    Main Application Flow:
+
+        Initialize logging (for debugging).
+
+        Handle Administrator elevation check and prompt.
+
+        Start the WebDAV server in a separate thread.
+
+        Start the mDNS service browser/registrar in a separate thread.
+
+        Initialize the pystray icon and menu.
+
+        Start the Tkinter (or PyQt) main event loop.
+
+        Implement graceful shutdown routines for all threads/services when the application exits (e.g., via the tray icon menu).
+
+    Cross-Component Communication:
+
+        The mDNS browser will update a shared data structure (e.g., a Queue or a threading.Lock-protected list) that the system tray icon uses to update its menu.
+
+        When a user clicks a peer in the tray menu, it should trigger the opening of the custom file explorer window, passing the selected peer's URL.
+
+        File explorer operations will then directly use the requests client to communicate with the remote peer's WebDAV server.
+
+IV. Windows-Specific Handling
+
+These are critical for the "Zero Configuration" and "Seamless Integration" goals on Windows.
+
+    Administrator Privileges:
+
+        On first run, the application needs to detect if it's running as Administrator.
+
+        If not, it should prompt the user to restart itself with elevated privileges (e.g., using ctypes.windll.shell32.ShellExecuteW). This is necessary for firewall rule modification and Public folder permissions.
+
+    Firewall Rules:
+
+        After obtaining Administrator privileges, use subprocess to execute netsh commands (or New-NetFirewallRule in PowerShell) to add an inbound rule for the WebDAV port (e.g., TCP 8080) and UDP 5353 (mDNS).
+
+        Make these rules specific to the application's executable path.
+
+    Public Folder Permissions:
+
+        Use subprocess to execute icacls commands to grant "Everyone" read/write access to the current user's Public folder (C:\Users\<username>\Public). This addresses potential Windows security blocks on guest access.
+
+V. Building the Executable (PyInstaller)
+
+Once the core application is functional, package it for easy distribution.
+
+    Preparation: Ensure your virtual environment is active and all necessary packages are installed.
+
+    Basic Command:
+    pyinstaller --onefile --name RimworldTextureOptimizer instant_transmission.py
+
+        Replace instant_transmission.py with your main script's filename.
+
+        --onefile: Creates a single .exe.
+
+        --name: Sets the output executable name.
+
+        --console: Includes a console window (useful for debugging, can be changed to --windowed later for a truly background app if desired).
+
+    Troubleshooting PyInstaller:
+
+        Hidden Imports: PyInstaller might miss some dynamically imported modules (e.g., by zeroconf or wsgidav). You might need to add --hidden-import=some_module arguments to your PyInstaller command.
+
+        Data Files: If your application uses any non-Python files (e.g., custom icons, configuration files), you'll need to specify them using --add-data "source;destination" arguments. The icon for pystray often needs to be added this way.
+
+        --debug=all: Use this PyInstaller option during development to get detailed information about what it's including/excluding.
+
+    Output: The executable will be found in the dist folder.
+
+VI. Testing & Validation
+
+Thorough testing is crucial to ensure "Zero Configuration" and "Seamless" operation.
+
+    Unit Testing: Test individual components (WebDAV server start/stop, mDNS registration/discovery, UI element interactions).
+
+    Integration Testing:
+
+        Multi-PC Test: The most important test. Run the executable on at least two Windows 10/11 machines on the same LAN.
+
+        Verify automatic discovery of peers via the system tray menu.
+
+        Test browsing remote public folders.
+
+        Test downloading files from one peer to another.
+
+        Test renaming/deleting files/folders on a remote peer through the custom UI.
+
+    Firewall Testing:
+
+        Test on a fresh Windows install to ensure firewall rules are correctly added.
+
+        Temporarily disable rules to verify the app stops working, then re-enable.
+
+    Permissions Testing: Verify files can be written to the Public folder by remote peers.
+
+    Performance Testing: Transfer large files to observe speed and stability.
+
+VII. Future Enhancements (Stretch Goals)
+
+As defined in your Goal.txt, these can be tackled after the core functionality is stable:
+
+    Optional PIN or Authentication Protection for shared folders.
+
+    Cross-Subnet Compatibility (may require more complex networking or manual IP input fallback).
+
+    Advanced Performance Optimizations (e.g., zero-copy transfers, smarter caching).
+
+    Upload Functionality (local to remote peers).
+
+    Detailed Progress Indicators (for downloads/uploads).
+
+    File Previews (e.g., image thumbnails in the file explorer).
+
+    Full Drag & Drop within the custom UI.
+
+    Advanced Search Functionality within remote folders.
+
+    Full Context Menus (right-click options for files/folders) with all operations.
+
+    Dark Mode / Light Mode Theme Switching.
+
+This guide provides a clear roadmap. By following these steps, you can systematically build "InstantTransmission" into the robust and user-friendly application you envision.
