@@ -4,23 +4,23 @@
 
 Share files across your local network with automatic peer discovery - no setup required.
 
-## 🧪 Beta Release
+## Beta Release
 
 **Status:** Beta 1 - Tested on Windows 11, needs broader testing
 
 This worked reliably on the developer's Windows 11 machines but **needs community testing** on different Windows configurations. If you encounter issues, please report them!
 
-## ✨ What Works
+## What Works
 
 ### Core Features
-- **🔍 Automatic Peer Discovery** - Find other users on your network instantly via mDNS
-- **📁 File Sharing** - Share your Public folder via WebDAV (read-only for security)
-- **📂 Folder Downloads** - Download entire folders while preserving directory structure
-- **⚡ Fast Transfers** - High-performance Waitress server (10+ MB/s on gigabit LAN)
-- **📊 Progress Tracking** - Real-time download speed and ETA
-- **🎨 Dark Mode UI** - Custom file browser with modern dark theme
-- **🔔 System Tray** - Runs in background, access via tray icon
-- **🛡️ Auto Firewall Setup** - Configures Windows Firewall automatically (requires admin on first run)
+- **Automatic Peer Discovery** - Find other users on your network instantly via mDNS
+- **File Sharing** - Share your Public folder via WebDAV (read-only for security)
+- **Folder Downloads** - Download entire folders while preserving directory structure
+- **Fast Transfers** - High-performance Waitress server (10+ MB/s on gigabit LAN)
+- **Progress Tracking** - Real-time download speed and ETA
+- **Dark Mode UI** - Custom file browser with modern dark theme
+- **System Tray** - Runs in background, access via tray icon
+- **Auto Firewall Setup** - Configures Windows Firewall automatically (requires admin on first run)
 
 ### What's Tested
 - ✅ Windows 11 (developer machines)
@@ -35,7 +35,7 @@ This worked reliably on the developer's Windows 11 machines but **needs communit
 - **No authentication** - Simplicity over complexity (use on trusted networks)
 - **Local network only** - Intentional security feature (never exposed to internet)
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Download & Run
 
@@ -58,7 +58,7 @@ This worked reliably on the developer's Windows 11 machines but **needs communit
 
 **That's it!** No configuration needed.
 
-## 🛠️ For Developers
+## For Developers
 
 **Note:** Source code includes unfinished features (password auth, remote desktop). These are not in the Beta 1 build and may cause issues if you try to rebuild.
 
@@ -72,13 +72,13 @@ pip install -r requirements.txt
 python instant_transmission.py
 ```
 
-## 📋 System Requirements
+## System Requirements
 
 - **Windows 10/11 (64-bit)**
 - **Administrator privileges** (one-time, for firewall setup)
 - **Local network connection**
 
-## 🏗️ Architecture
+## Architecture
 
 Built with Python using:
 - **Waitress** - High-performance WSGI server
@@ -87,24 +87,24 @@ Built with Python using:
 - **Tkinter** - Cross-platform GUI framework
 - **pystray** - System tray integration
 
-## 🔒 Security
+## Security
 
 - **Local network only** - Not exposed to the internet
 - **Read-only sharing** - Peers can only download, not upload/modify
 - **Firewall protected** - Automatic Windows Firewall rule setup
 - **No cloud services** - Everything stays on your network
 
-## 🤝 Contributing
+## Contributing
 
 This is a beta release! If you:
 - Find bugs → Open an issue
 - Have Windows 10 → Test it and report back
 - Want features → Suggest them in discussions
 
-## 📜 License
+## License
 
 GPL-3.0 - Open source begits open source
 
-## 🙏 Acknowledgments
+## Acknowledgments
 
 Built for local network file sharing without the hassle of mapped drives, shared folders, or cloud services.
